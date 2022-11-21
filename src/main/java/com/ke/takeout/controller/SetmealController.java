@@ -13,9 +13,12 @@ import com.ke.takeout.service.SetmealDishService;
 import com.ke.takeout.service.SetmealService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +33,8 @@ public class SetmealController {
     private SetmealDishService setmealDishService;
     @Autowired
     private CategoryService categoryService;
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     /**
      * 新增套餐
@@ -39,6 +44,10 @@ public class SetmealController {
     @PostMapping
     public R<String> save(@RequestBody SetmealDto setmealDto) {
         setmealService.saveWithDish(setmealDto);
+        // 删除缓存防止脏读 多线程需要用锁
+        String key = "setmeal_category_" + setmealDto.getCategoryId() + "*";
+        Set keys = redisTemplate.keys(key);
+        redisTemplate.delete(keys);
         return R.success("添加成功！");
     }
 
@@ -80,31 +89,53 @@ public class SetmealController {
     @PutMapping
     public R<String> update(@RequestBody SetmealDto setmealDto) {
         setmealService.updateWithDish(setmealDto);
+        String key = "setmeal_category_"+setmealDto.getCategoryId()+"*";
+        Set keys = redisTemplate.keys(key);
+        redisTemplate.delete(keys);
         return R.success("修改成功！");
     }
 
     @PostMapping("status/{to}")
     public R<String> status(@PathVariable int to, @RequestParam List<Long> id) {
+        String key = null;
         for (long i : id) {
             Setmeal setmeal = setmealService.getById(i);
             setmeal.setStatus(to);
             setmealService.updateById(setmeal);
+            key = "setmeal_category_"+setmeal.getCategoryId()+"*";
         }
+        Set keys = redisTemplate.keys(key);
+        redisTemplate.delete(keys);
         return R.success("修改成功!");
     }
 
     @DeleteMapping
     public R<String> delete(@RequestParam List<Long> id) {
-        setmealService.removeWithDish(id);
+        List<Setmeal> list = setmealService.removeWithDish(id);
+        for (Setmeal setmeal : list) {
+            String key = "setmeal_category_" + setmeal.getCategoryId() + "*";
+            Set keys = redisTemplate.keys(key);
+            redisTemplate.delete(keys);
+        }
         return R.success("删除成功！");
     }
 
     @GetMapping("/list")
     public R<List<Setmeal>> list(Setmeal setmeal) {
+
+        // 添加redis作为缓存防止过多访问数据库
+        List<Setmeal> list = null;
+        String key = "setmeal_category_" + setmeal.getCategoryId() + "_status_" + setmeal.getStatus();
+        list = (List<Setmeal>) redisTemplate.opsForValue().get(key);
+        if (list != null) {
+            return R.success(list);
+        }
+
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Setmeal::getCategoryId, setmeal.getCategoryId());
         queryWrapper.eq(Setmeal::getStatus, setmeal.getStatus());
-        List<Setmeal> list = setmealService.list(queryWrapper);
+        list = setmealService.list(queryWrapper);
+        redisTemplate.opsForValue().set(key, list, 24, TimeUnit.HOURS);
         return R.success(list);
     }
 

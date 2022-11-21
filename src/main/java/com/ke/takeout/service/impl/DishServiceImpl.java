@@ -1,10 +1,8 @@
 package com.ke.takeout.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ke.takeout.common.CustomException;
-import com.ke.takeout.common.R;
 import com.ke.takeout.dto.DishDto;
 import com.ke.takeout.mapper.DishMapper;
 import com.ke.takeout.pojo.Dish;
@@ -15,7 +13,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -70,7 +67,7 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
 
     @Override
     @Transactional
-    public void removeWithFlavor(List<Long> ids) {
+    public List<Dish> removeWithFlavor(List<Long> ids) {
         // 查询是否全是停售的
         LambdaQueryWrapper<Dish> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.in(Dish::getId, ids);
@@ -78,11 +75,13 @@ public class DishServiceImpl extends ServiceImpl<DishMapper, Dish> implements Di
         int count = this.count(queryWrapper);
         // 如果count > 0说明有在售的
         if (count > 0) throw new CustomException("无法删除在售菜品");
+        List<Dish> res = this.list(queryWrapper);
         this.removeByIds(ids);
 
         // 删除相对应的flavor
         LambdaQueryWrapper<DishFlavor> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.in(DishFlavor::getDishId, ids);
         dishFlavorService.remove(lambdaQueryWrapper);
+        return res;
     }
 }

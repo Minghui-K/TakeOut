@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -71,16 +70,18 @@ public class SetmealServiceImpl extends ServiceImpl<SetmealMapper, Setmeal> impl
 
     @Override
     @Transactional
-    public void removeWithDish(List<Long> ids) {
+    public List<Setmeal> removeWithDish(List<Long> ids) {
         LambdaQueryWrapper<Setmeal> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.in(Setmeal::getId, ids);
         queryWrapper.eq(Setmeal::getStatus, 1);
         if (this.count(queryWrapper) > 0) throw new CustomException("无法删除在售套餐！");
+        List<Setmeal> list = this.list(queryWrapper);
         this.removeByIds(ids);
 
         LambdaQueryWrapper<SetmealDish> lambdaQueryWrapper = new LambdaQueryWrapper<>();
         lambdaQueryWrapper.in(SetmealDish::getSetmealId, ids);
         setmealDishService.remove(lambdaQueryWrapper);
+        return list;
     }
 
 }
