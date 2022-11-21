@@ -1,0 +1,104 @@
+server:
+  port: 8080
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+#  shardingsphere:
+#    datasource:
+#      names:
+#        master,slave
+#      # 主数据源
+#      master:
+#        type: com.alibaba.druid.pool.DruidDataSource
+#        driver-class-name: com.mysql.cj.jdbc.Driver
+#        url: jdbc:mysql://localhost:3306/yt_take_out?characterEncoding=utf-8
+#        username: 你的账号
+#        password: 你的密码
+#        validationQuery: SELECT 1
+#        validationQueryTimeout: 1000
+#      # 从数据源
+#      slave:
+#        enenabled: true
+#        type: com.alibaba.druid.pool.DruidDataSource
+#        driver-class-name: com.mysql.cj.jdbc.Driver
+#        url: jdbc:mysql://localhost/yt_take_out?characterEncoding=utf-8
+#        username: 你的账号
+#        password: 你的密码
+#        validationQuery: SELECT 1
+#        validationQueryTimeout: 1000
+#
+#      masterslave:
+#        # 读写分离配置
+#        load-balance-algorithm-type: round_robin
+#        # 最终的数据源名称
+#        name: dataSource
+#        # 主库数据源名称
+#        master-data-source-name: master
+#        # 从库数据源名称列表，多个逗号分隔
+#        slave-data-source-names: slave
+#      props:
+#        sql:
+#          show: true #开启SQL显示，默认false
+#    sharding:
+#      default-data-source-name: master
+
+  cache:
+    redis:
+      time-to-live: 1800000 #设置缓存数据的过期时间
+  redis:
+    host: localhost
+    port: 6379
+    #password:
+    database: 0 #操作的是0号数据库
+    jedis:
+      pool:
+        max-active: 8
+        max-wait: 1ms
+        max-idle: 8
+        min-idle: 0
+
+
+  banner:
+    location: banner.txt
+
+  application:
+    name: ke_take_out
+
+  datasource:
+    druid:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      url: jdbc:mysql://localhost:3306/ke_take_out?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
+      username: root
+      password: kmh200088
+
+TakeOut:
+  path: C:\Users\Minghui\Java Projects\My-Projects\TakeOut\src\main\resources\backend\images\img\
+
+mybatis-plus:
+  configuration:
+    #在映射实体或者属性时，将数据库中表名和字段名中的下划线去掉，按照驼峰命名法映射
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+  global-config:
+    db-config:
+      id-type: ASSIGN_ID
+
+weixin:
+  getPhoneNumberUrl: https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=
+  getAccessTokenUrl: https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&
+  jscode2sessionUrl: https://api.weixin.qq.com/sns/jscode2session
+  appid: 你的appid
+  secret: 你的secret
+
+qiniu:
+  accessKey: 你的accessKey
+  secretKey: 你的secretKey
+  bucket: 你的bucket
+
+TencentCloud:
+  secretId: 你的secretId
+  secretKey: 你的secretKey
+  appID: 你的appid
+  sign: 你的sign
